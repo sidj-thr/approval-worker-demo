@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   count-reviews:
-    name: Count pending reviews
+    name: Count Pending Approvals
     runs-on: ubuntu-latest
     if: >-
       (
@@ -21,7 +21,7 @@ jobs:
         github.event.comment.body == 'pending_reviews' &&
         github.event.issue.pull_request != null
       ) || (
-        github.event_name == 'pull_request' &&
+        github.event_name == 'pull_request_target' &&
         (github.event.action == 'labeled' || github.event.action == 'synchronize') &&
         contains(github.event.pull_request.labels.*.name, 'verify')
       )
