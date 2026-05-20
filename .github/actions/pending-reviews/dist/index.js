@@ -37766,7 +37766,7 @@ async function run() {
   await upsertPrComment(commentOctokit, owner, repo, prNumber, commentBody);
 }
 
-run().catch((error) => core.setFailed(error.message));
+run().catch((error) => core.warning(`Action did not complete: ${error.message}`));
 
 module.exports = __webpack_exports__;
 /******/ })()
