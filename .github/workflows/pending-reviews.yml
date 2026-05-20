@@ -16,21 +16,21 @@ jobs:
     name: Count Pending Approvals
     runs-on: ubuntu-latest
     continue-on-error: true
-    if: >-
-      (
-        github.event_name == 'issue_comment' &&
-        github.event.comment.body == 'pending_reviews' &&
-        github.event.issue.pull_request != null
-      ) || (
-        github.event_name == 'pull_request_target' &&
-        (github.event.action == 'labeled' || github.event.action == 'synchronize') &&
-        contains(github.event.pull_request.labels.*.name, 'verified')
-      )
     permissions:
       pull-requests: write
       issues: write
     steps:
       - name: Count pending reviews
+        if: >-
+          (
+            github.event_name == 'issue_comment' &&
+            github.event.comment.body == 'pending_reviews' &&
+            github.event.issue.pull_request != null
+          ) || (
+            github.event_name == 'pull_request_target' &&
+            (github.event.action == 'labeled' || github.event.action == 'synchronize') &&
+            contains(github.event.pull_request.labels.*.name, 'verified')
+          )        
         uses: sidj-thr-org/actions/.github/actions/pending-reviews@main
         continue-on-error: true
         with:
