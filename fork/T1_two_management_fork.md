@@ -1,4 +1,4 @@
-# T1: 2 management
+# T9: Issue comment emits the status or not
 
 ## Team Structure
 ```json
