@@ -1,36 +1,44 @@
-name: Pending Reviews
+name: Count Pending Approvals
 
 on:
   issue_comment:
     types: [created]
   pull_request_target:
-    types: [labeled]
+    types: [labeled, synchronize]
 
 permissions:
   contents: read
   pull-requests: write
   issues: write
-  statuses: write
 
 jobs:
-  check-approvals:
-    if: |
-      github.event_name == 'pull_request_target' ||
-      (github.event_name == 'issue_comment' &&
-       github.event.issue.pull_request &&
-       contains(github.event.comment.body, 'pending_reviews'))
+  count-reviews:
+    name: Count Pending Approvals
     runs-on: ubuntu-latest
+    if: >-
+      (
+        github.event_name == 'issue_comment' &&
+        github.event.comment.body == 'pending_reviews' &&
+        github.event.issue.pull_request != null
+      ) || (
+        github.event_name == 'pull_request_target' &&
+        (github.event.action == 'labeled' || github.event.action == 'synchronize') &&
+        contains(github.event.pull_request.labels.*.name, 'verified')
+      )
+    permissions:
+      pull-requests: write
+      issues: write
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
-      - name: Run pending-reviews action
+      - name: Count pending reviews
         uses: ./.github/actions/pending-reviews
         continue-on-error: true
         with:
-          pat-token: ${{ secrets.PAT_TOKEN }}
-          pr-number:    ${{ github.event.pull_request.number || github.event.issue.number }}
-          head-sha:     ${{ github.event.pull_request.head.sha }}
+          app-id:      ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          pr-number:   ${{ github.event.pull_request.number || github.event.issue.number }}
           maintainers-github-team: qvac-mgmt
           team-leads-github-team:  qvac-internal-merge
-          members-github-team:     qvac-internal-dev
+          total-required-approvals: 2
