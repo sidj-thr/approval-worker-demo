@@ -1,11 +1,22 @@
 const core   = require("@actions/core");
 const github = require("@actions/github");
+const { createAppAuth } = require("@octokit/auth-app");
 
 const { checkApproved, getPendingMessage, buildComment } = require("./approval");
 const { fetchReviews, buildApprovalCounts, upsertPrComment } = require("./github");
 
+async function getInstallationOctokit(appId, privateKey, owner, repo) {
+  const auth = createAppAuth({ appId: parseInt(appId, 10), privateKey });
+
+  const { token: jwtToken } = await auth({ type: "app" });
+  const appOctokit = github.getOctokit(jwtToken);
+  const { data: installation } = await appOctokit.rest.apps.getRepoInstallation({ owner, repo });
+
+  const { token } = await auth({ type: "installation", installationId: installation.id });
+  return github.getOctokit(token);
+}
+
 async function run() {
-  const orgOctokit     = github.getOctokit(core.getInput("pat-token",    { required: true }));
   const commentOctokit = github.getOctokit(core.getInput("github-token", { required: true }));
   const { owner, repo } = github.context.repo;
 
@@ -17,7 +28,13 @@ async function run() {
     teamLead:   core.getInput("team-leads-github-team",  { required: true }),
   };
 
-  const reviews = await fetchReviews(orgOctokit, owner, repo, prNumber);
+  const orgOctokit = await getInstallationOctokit(
+    core.getInput("app-id",      { required: true }),
+    core.getInput("private-key", { required: true }),
+    owner, repo,
+  );
+
+  const reviews = await fetchReviews(commentOctokit, owner, repo, prNumber);
   const counts  = await buildApprovalCounts(orgOctokit, owner, repo, reviews, reviewerTeams);
 
   const approved       = checkApproved(counts, minTotal);
