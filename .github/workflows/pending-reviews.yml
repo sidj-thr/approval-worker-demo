@@ -4,7 +4,7 @@ on:
   issue_comment:
     types: [created]
   pull_request_target:
-    types: [labeled, synchronize]
+    types: [opened, labeled, synchronize]
 
 permissions:
   contents: read
@@ -15,27 +15,32 @@ jobs:
   count-reviews:
     name: Count Pending Approvals
     runs-on: ubuntu-latest
-    if: >-
-      (
-        github.event_name == 'issue_comment' &&
-        github.event.comment.body == 'pending_reviews' &&
-        github.event.issue.pull_request != null
-      ) || (
-        github.event_name == 'pull_request_target' &&
-        (github.event.action == 'labeled' || github.event.action == 'synchronize') &&
-        contains(github.event.pull_request.labels.*.name, 'verified')
-      )
+    continue-on-error: true
     permissions:
       pull-requests: write
       issues: write
     steps:
       - name: Count pending reviews
+        if: >-
+          (
+            github.event_name == 'issue_comment' &&
+            github.event.comment.body == 'pending_reviews' &&
+            github.event.issue.pull_request != null
+          ) || (
+            github.event_name == 'pull_request_target' &&
+            github.event.action == 'opened'
+          ) || (
+            github.event_name == 'pull_request_target' &&
+            (github.event.action == 'labeled' || github.event.action == 'synchronize') &&
+            contains(github.event.pull_request.labels.*.name, 'verified')
+          )
         uses: sidj-thr-org/actions/.github/actions/pending-reviews@main
         continue-on-error: true
         with:
           app-id:      ${{ vars.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          client-id:   ${{ vars.APP_CLIENT_ID }}
+          client-secret: ${{ secrets.APP_CLIENT_SECRET }}
           pr-number:   ${{ github.event.pull_request.number || github.event.issue.number }}
           maintainers-github-team: qvac-mgmt
-          team-leads-github-team:  qvac-internal-merge
+          team-leads-github-team: qvac-internal-merge
           total-required-approvals: 2
