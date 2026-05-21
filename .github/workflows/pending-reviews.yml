@@ -38,8 +38,9 @@ jobs:
         continue-on-error: true
         with:
           app-id:      ${{ vars.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          client-id:   ${{ vars.APP_CLIENT_ID }}
+          client-secret: ${{ secrets.APP_CLIENT_SECRET }}
           pr-number:   ${{ github.event.pull_request.number || github.event.issue.number }}
           maintainers-github-team: qvac-mgmt
-          team-leads-github-team:  qvac-internal-merge
+          team-leads-github-team: qvac-internal-merge
           total-required-approvals: 2
